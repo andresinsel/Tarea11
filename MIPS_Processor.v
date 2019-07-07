@@ -1,0 +1,412 @@
+/******************************************************************
+* Description
+*	This is the top-level of a MIPS processor
+* This processor is written Verilog-HDL. Also, it is synthesizable into hardware.
+* Parameter MEMORY_DEPTH configures the program memory to allocate the program to
+* be execute. If the size of the program changes, thus, MEMORY_DEPTH must change.
+* This processor was made for computer organization class at ITESO.
+******************************************************************/
+
+
+module MIPS_Processor
+#(
+	parameter MEMORY_DEPTH = 32,
+	parameter DATA_WIDTH = 32
+)
+
+(
+	// Inputs
+	input clk,
+	input reset,
+	input [7:0] PortIn,
+	// Output
+	output [31:0] ALUResultOut,
+	output [31:0] PortOut
+);
+//******************************************************************/
+//******************************************************************/
+assign  PortOut = 0;
+
+//******************************************************************/
+//******************************************************************/
+// Data types to connect modules
+// Data types to connect modules
+wire BranchNE_wire;
+wire BranchEQ_wire;
+wire RegDst_wire;
+wire NotZeroANDBrachNE;
+wire ZeroANDBrachEQ;
+wire ORForBranch;
+wire ALUSrc_wire;
+wire RegWrite_wire;
+wire Zero_wire;
+wire Jump_wire;
+wire Jal_wire;
+wire Jr_wire;
+wire [2:0] ALUOp_wire;
+wire [3:0] ALUOperation_wire;
+wire [4:0] WriteRegister_wire;
+wire [4:0] MuxtoRegisterWrite_wire;
+wire [31:0] Instruction_wire;
+wire [31:0] ReadData1_wire;
+wire [31:0] ReadData2_wire;
+wire [31:0] InmmediateExtend_wire;
+wire [31:0] ReadData2OrInmmediate_wire;
+wire [31:0] ALUResult_wire;
+wire [31:0] PC_4_wire;
+wire [31:0] InmmediateExtendAnded_wire;
+wire [31:0] PCtoBranch_wire;
+wire [31:0] PC_wire;
+wire [31:0] IDInstruction_wire;
+wire MemRead_wire;
+wire MemtoReg_wire;
+wire MemWrite_wire;
+wire [31:0] ReadData_wire;
+wire [31:0] WriteData_wire;
+wire [31:0] Shift2toAddPC_wire;
+wire [31:0] PCPlusBranch_wire;
+wire [31:0] JumpPC_wire;
+wire [31:0] JumpShift_wire;
+wire [31:0] PCtoJump_wire;
+wire [31:0] MuxtoWriteData_wire;
+wire [31:0] NewPc_wire;
+wire EXRegWrite_wire;
+wire EXBranchNE_wire;
+wire EXBranchEQ_wire;
+wire [2:0] EXALUOp_wire;
+wire EXALUSrc_wire;
+wire EXMemRead_wire;
+wire EXMemtoReg_wire;
+wire EXMemWrite_wire;
+wire [31:0] EXReadData1_wire;
+wire [31:0] EXReadData2_wire;
+wire [31:0] EXInmmediateExtend_wire;
+wire [31:0] EXInstruction_wire;
+wire [4:0] EXWriteRegister_wire;
+wire MEMWrite_wire;
+wire MEMMemRead_wire;
+wire MEMMemtoReg_wire;
+wire MEMMemWrite_wire;
+wire [31:0] MEMReadData2_wire;
+wire [31:0] MEMInstruction_wire;
+wire [31:0] MEMALUResult_wire;
+wire [4:0] MEMWriteRegister_wire;
+wire WBWrite_wire;
+wire WBMemtoReg_wire;
+wire [31:0] WBALUResult_wire;
+wire [31:0] WBInstruction_wire; 
+wire [31:0] WBReadData_wire;
+wire [4:0] WBWriteRegister_wire;
+integer ALUStatus;
+
+
+//**********************/
+//**********************/
+//**********************/
+//**********************/
+//**********************/
+ PC_Register
+#(
+	.N(32)
+)
+
+//-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o
+ProgramCounter
+(
+	.clk(clk),
+	.reset(reset),
+	. NewPC(PC_4_wire),	//NewPc_wire
+	.PCValue(PC_wire)
+);
+
+
+ProgramMemory
+#(
+	.MEMORY_DEPTH(200)
+)
+ROMProgramMemory
+(
+	.Address(PC_wire),
+	.Instruction(Instruction_wire)
+);
+
+Adder32bits
+PC_Puls_4
+(
+	.Data0(PC_wire),
+	.Data1(4),
+	
+	.Result(PC_4_wire)
+);
+
+RegisterPipeline
+#(
+	.N(32)
+)
+IFID
+(
+	.clk(clk),
+	.enable(1),
+	.DataInput(Instruction_wire),
+	.DataOutput(IDInstruction_wire)
+);
+
+
+//**********************/
+//**********************/
+//**********************/
+//**********************/
+//**********************/
+Control
+ControlUnit
+(
+	.OP(IDInstruction_wire[31:26]),
+	.RegDst(RegDst_wire),
+	.BranchNE(BranchNE_wire),
+	.BranchEQ(BranchEQ_wire),
+	.ALUOp(ALUOp_wire),
+	.ALUSrc(ALUSrc_wire),
+	.RegWrite(RegWrite_wire),
+	.MemRead(MemRead_wire),
+	.MemtoReg(MemtoReg_wire),
+	.MemWrite(MemWrite_wire),
+	.Jump(Jump_wire),
+	.Jal(Jal_wire)
+);
+
+Multiplexer2to1
+#(
+	.NBits(5)
+)
+MUX_ForRTypeAndIType
+(
+	.Selector(RegDst_wire),
+	.MUX_Data0(IDInstruction_wire[20:16]),
+	.MUX_Data1(IDInstruction_wire[15:11]),
+	
+	.MUX_Output(WriteRegister_wire)
+
+);
+
+
+
+RegisterFile
+Register_File
+(
+	.clk(clk),
+	.reset(reset),
+	.RegWrite(WBRegWrite_wire),
+	.WriteRegister(WBWriteRegister_wire),//MuxtoRegisterWrite_wire
+	.ReadRegister1(IDInstruction_wire[25:21]),
+	.ReadRegister2(IDInstruction_wire[20:16]),
+	.WriteData(WriteData_wire),//MuxtoWriteData_wire
+	.ReadData1(ReadData1_wire),
+	.ReadData2(ReadData2_wire)
+
+);
+
+SignExtend
+SignExtendForConstants
+(   
+	.DataInput(IDInstruction_wire[15:0]),
+   .SignExtendOutput(InmmediateExtend_wire)
+);
+
+
+RegisterPipeline
+#(
+	.N(143)
+)
+IDEX
+(
+	.clk(clk),
+	.enable(1),
+	.DataInput({RegWrite_wire,BranchNE_wire,BranchEQ_wire,ALUOp_wire,ALUSrc_wire,MemRead_wire,MemtoReg_wire,MemWrite_wire,ReadData1_wire,ReadData2_wire,InmmediateExtend_wire,IDInstruction_wire, WriteRegister_wire}),
+	.DataOutput({EXRegWrite_wire,EXBranchNE_wire,EXBranchEQ_wire,EXALUOp_wire,EXALUSrc_wire,EXMemRead_wire,EXMemtoReg_wire,EXMemWrite_wire,EXReadData1_wire,EXReadData2_wire,EXInmmediateExtend_wire,EXInstruction_wire, EXWriteRegister_wire})
+);
+
+//**********************/
+//**********************/
+//**********************/
+//**********************/
+//**********************/
+
+
+Multiplexer2to1
+#(
+	.NBits(32)
+)
+MUX_ForReadDataAndInmediate
+(
+	.Selector(EXALUSrc_wire),
+	.MUX_Data0(EXReadData2_wire),
+	.MUX_Data1(EXInmmediateExtend_wire),
+	
+	.MUX_Output(ReadData2OrInmmediate_wire)
+
+);
+
+
+ALUControl
+ArithmeticLogicUnitControl
+(
+	.ALUOp(EXALUOp_wire),
+	.ALUFunction(EXInstruction_wire[5:0]),
+	.ALUOperation(ALUOperation_wire)
+
+);
+
+
+
+ALU
+Arithmetic_Logic_Unit 
+(
+	.ALUOperation(ALUOperation_wire),
+	.A(EXReadData1_wire),
+	.B(ReadData2OrInmmediate_wire),
+	.Shamt(EXInstruction_wire[10:6]),
+	.Zero(Zero_wire),
+	.ALUResult(ALUResult_wire)
+);
+
+assign ALUResultOut = ALUResult_wire;
+RegisterPipeline
+#(
+	.N(105)
+)
+EXMEM
+(
+	.clk(clk),
+	.enable(1),
+	.DataInput({EXRegWrite_wire,EXMemRead_wire,EXMemtoReg_wire,EXMemWrite_wire,EXInstruction_wire, ALUResult_wire, EXReadData2_wire,EXWriteRegister_wire}),
+	.DataOutput({MEMRegWrite_wire,MEMMemRead_wire,MEMMemtoReg_wire,MEMMemWrite_wire,MEMInstruction_wire, MEMALUResult_wire, MEMReadData2_wire,MEMWriteRegister_wire})
+);
+
+//**********************/
+//**********************/
+//**********************/
+//**********************/
+//**********************/
+DataMemory 
+#(	
+	.DATA_WIDTH(DATA_WIDTH)
+)
+RAM
+(
+	.WriteData(MEMReadData2_wire),
+	.Address(MEMALUResult_wire),
+	.MemWrite(MEMMemWrite_wire),
+	.MemRead(MEMMemRead_wire), 
+	.clk(clk),
+	.ReadData(ReadData_wire)
+);
+
+RegisterPipeline
+#(
+	.N(103)
+)
+MEMWB
+(
+	.clk(clk),
+	.enable(1),
+	.DataInput({MEMRegWrite_wire,MEMMemtoReg_wire,MEMInstruction_wire, ReadData_wire, MEMALUResult_wire,MEMWriteRegister_wire }),
+	.DataOutput({WBRegWrite_wire,WBMemtoReg_wire,WBInstruction_wire, WBReadData_wire, WBALUResult_wire,WBWriteRegister_wire})
+);
+//**********************/
+//**********************/
+//**********************/
+//**********************/
+//**********************/
+Multiplexer2to1
+#(
+	.NBits(32)
+)
+Mux_MemtoReg
+(
+	.Selector(WBMemtoReg_wire),
+	.MUX_Data0(WBALUResult_wire),
+	.MUX_Data1(WBReadData_wire),
+	
+	.MUX_Output(WriteData_wire)
+);
+//ShiftLeft2
+//shift
+//(
+//	.DataInput(InmmediateExtend_wire),
+//   .DataOutput(Shift2toAddPC_wire)
+//);
+//Adder32bits
+//AddPCandBranch
+//(
+//	.Data0(PC_4_wire),
+//	.Data1(Shift2toAddPC_wire),
+//	
+//	.Result(PCPlusBranch_wire)
+//);
+//assign NotZeroANDBrachNE = (!Zero_wire) & BranchNE_wire;
+//assign ZeroANDBrachEQ = Zero_wire & BranchEQ_wire;
+//assign ORForBranch = NotZeroANDBrachNE | ZeroANDBrachEQ;
+//
+//Multiplexer2to1
+//MuxPCorBranch
+//(
+//	.Selector(ORForBranch),
+//	.MUX_Data0(PC_4_wire),
+//	.MUX_Data1(PCPlusBranch_wire),
+//	.MUX_Output(PCtoBranch_wire)
+//
+//);
+//
+//ShiftLeft2
+//shiftJump
+//(
+//	.DataInput({6'b0,Instruction_wire[25:0]}),
+//   .DataOutput(JumpShift_wire)
+//);
+//assign JumpPC_wire= {PC_4_wire[31:28], JumpShift_wire[27:0]};
+//
+//Multiplexer2to1
+//MuxJumporPC
+//(
+//	.Selector(Jump_wire),
+//	.MUX_Data0(PCtoBranch_wire),
+//	.MUX_Data1(JumpPC_wire),
+//	.MUX_Output(PCtoJump_wire)
+//);
+//
+//Multiplexer2to1
+//#(
+//	.NBits(5)
+//)
+//MuxJalorDestination
+//(
+//	.Selector(Jal_wire),
+//	.MUX_Data0(WriteRegister_wire),
+//	.MUX_Data1(5'd31),
+//	.MUX_Output(MuxtoRegisterWrite_wire)
+//
+//);
+//
+//Multiplexer2to1
+//MuxWriteData
+//(
+//	.Selector(Jal_wire),
+//	.MUX_Data0(WriteData_wire),
+//	.MUX_Data1(PC_4_wire),
+//	.MUX_Output(MuxtoWriteData_wire)
+//
+//);
+//assign Jr_wire = (Instruction_wire[5:0] == 6'h08 && Instruction_wire[31:26] == 6'h00) ? 1'b1 : 1'b0;
+//
+//Multiplexer2to1
+//MuxToPC
+//(
+//	.Selector(Jr_wire),
+//	.MUX_Data0(PCtoJump_wire),
+//	.MUX_Data1(ReadData1_wire),
+//	.MUX_Output(NewPc_wire)
+//
+//);
+//
+endmodule
+//
