@@ -16,7 +16,7 @@ module RegisterPipeline
 always@(negedge reset or negedge clk) begin	
 	if(reset==0)
 		DataOutput <= Initial;
-	else
+	else	
 		if(enable==1)
 			DataOutput<=DataInput;
 end

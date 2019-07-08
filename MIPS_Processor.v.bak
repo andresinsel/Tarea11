@@ -280,7 +280,6 @@ EXMEM
 (
 	.clk(clk),
 	.enable(1),
-	.reset(reset),
 	.DataInput({EXRegWrite_wire,EXMemRead_wire,EXMemtoReg_wire,EXMemWrite_wire,EXInstruction_wire, ALUResult_wire, EXReadData2_wire,EXWriteRegister_wire}),
 	.DataOutput({MEMRegWrite_wire,MEMMemRead_wire,MEMMemtoReg_wire,MEMMemWrite_wire,MEMInstruction_wire, MEMALUResult_wire, MEMReadData2_wire,MEMWriteRegister_wire})
 );
@@ -311,8 +310,8 @@ RegisterPipeline
 MEMWB
 (
 	.clk(clk),
-	.reset(reset),
 	.enable(1),
+	.reset(reset),
 	.DataInput({MEMRegWrite_wire,MEMMemtoReg_wire,MEMInstruction_wire, ReadData_wire, MEMALUResult_wire,MEMWriteRegister_wire }),
 	.DataOutput({WBRegWrite_wire,WBMemtoReg_wire,WBInstruction_wire, WBReadData_wire, WBALUResult_wire,WBWriteRegister_wire})
 );

@@ -147,6 +147,7 @@ IFID
 (
 	.clk(clk),
 	.enable(1),
+	.reset(reset),
 	.DataInput(Instruction_wire),
 	.DataOutput(IDInstruction_wire)
 );
@@ -221,6 +222,7 @@ IDEX
 (
 	.clk(clk),
 	.enable(1),
+	.reset(reset),
 	.DataInput({RegWrite_wire,BranchNE_wire,BranchEQ_wire,ALUOp_wire,ALUSrc_wire,MemRead_wire,MemtoReg_wire,MemWrite_wire,ReadData1_wire,ReadData2_wire,InmmediateExtend_wire,IDInstruction_wire, WriteRegister_wire}),
 	.DataOutput({EXRegWrite_wire,EXBranchNE_wire,EXBranchEQ_wire,EXALUOp_wire,EXALUSrc_wire,EXMemRead_wire,EXMemtoReg_wire,EXMemWrite_wire,EXReadData1_wire,EXReadData2_wire,EXInmmediateExtend_wire,EXInstruction_wire, EXWriteRegister_wire})
 );
@@ -278,6 +280,7 @@ EXMEM
 (
 	.clk(clk),
 	.enable(1),
+	.reset(reset),
 	.DataInput({EXRegWrite_wire,EXMemRead_wire,EXMemtoReg_wire,EXMemWrite_wire,EXInstruction_wire, ALUResult_wire, EXReadData2_wire,EXWriteRegister_wire}),
 	.DataOutput({MEMRegWrite_wire,MEMMemRead_wire,MEMMemtoReg_wire,MEMMemWrite_wire,MEMInstruction_wire, MEMALUResult_wire, MEMReadData2_wire,MEMWriteRegister_wire})
 );
@@ -309,6 +312,7 @@ MEMWB
 (
 	.clk(clk),
 	.enable(1),
+	.reset(reset),
 	.DataInput({MEMRegWrite_wire,MEMMemtoReg_wire,MEMInstruction_wire, ReadData_wire, MEMALUResult_wire,MEMWriteRegister_wire }),
 	.DataOutput({WBRegWrite_wire,WBMemtoReg_wire,WBInstruction_wire, WBReadData_wire, WBALUResult_wire,WBWriteRegister_wire})
 );
